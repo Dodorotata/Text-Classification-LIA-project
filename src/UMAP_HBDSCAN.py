@@ -1,5 +1,5 @@
-# %% [markdown]
-# Notebook details:
+#--------------------------------------------------------------------------------------------------
+# Script details:
 # * handles all or slice from dataset (random choice of rows)
 # * text preprocessing: remove all urls, remove empty chunk rows
 # * text is devided in chunks to avoid truncation by BERT model
@@ -8,9 +8,20 @@
 # * clustering with HBDSCAN
 # * labeling is done by counting the most common words in each cluster after lemmatization
 # * results and parameters for each run are saved in folder
-# --------
+# ------------------------------------------------------------------------------------------------
 
-# %%
+#-------------------------------------------------------------------------------------------------
+# create environmnet from terminal:
+# create a virtual environment (venv): python -m venv venv
+# activate the virtual environment (on Windows): venv\Scripts\activate
+# activate the virtual environment (on Unix or MacOS): source venv/bin/activate
+
+# Install libraries from requirements.txt
+import sys
+import subprocess
+subprocess.check_call([sys.executable, '-m', 'pip', 'install', '-r', 'https://raw.githubusercontent.com/DorotaBjoorn/Text-Classification-LIA-project/main/requirements.txt'])
+#-----------------------------------------------------------------------------------------------------
+
 from pathlib import Path
 import pandas as pd
 from pandas import DataFrame
@@ -28,19 +39,20 @@ from datetime import datetime
 import json
 import webbrowser
 
-from tools.text.filtering import remove_urls
+from filtering import remove_urls
 from preprocessing import read_raw_data_to_df, prepare_df, add_text_chunks_to_df
 from cluster_labeling import c_tf_idf, extract_top_n_words_per_topic, extract_cluster_sizes
 from visualisation import create_topic_cluster_scatter, custom_scatter_layout
 from save_results import create_experiment_folder, save_plot, save_dataframe, save_parameters
 
+
 # Create df from data
-file_name = 'vnnforum_small.tsv'
+file_name = 'forum_posts.tsv'
 df = read_raw_data_to_df(file_name)
 df = df
 col_containing_text = 'text'
-n_rows = 1000
-df = prepare_df(df, col_containing_text, n_rows)
+# n_rows = 1000
+df = prepare_df(df, col_containing_text)
 
 
 # Save text in chunks short enough for model to handle and add to df
@@ -64,6 +76,7 @@ df.to_csv(f'{datawarehouse_folder}/{file_name}_chunked_embeddings.tsv', sep="\t"
 base_path = Path(__file__).parents[1]
 file_name = file_name
 exp_folder_path = create_experiment_folder(base_path, file_name)
+
 
 # Reduce embedings dimensionality with UMAP and cluster with HBDSCAN, add cluster label to df
 umap_params = {
@@ -112,6 +125,7 @@ df['umap_y'] = umap_embeddings_2D[:, 1]
 
 df = df.merge(cluster_words_df, on='cluster_label').drop('cluster_size', axis=1) # *1)
 
+
 # Visualize topic clusters, save plot, open in browser
 fig = create_topic_cluster_scatter(df = df, category = 'cluster_label')
 fig = custom_scatter_layout(fig = fig, plot_title = 'VNN blogg grouped by cluster', x_title = 'umap_x', y_title = 'umap_y')
@@ -120,8 +134,10 @@ save_plot(fig, exp_folder_path)
 cluster_plot_path = exp_folder_path / 'fig_clustered_text_data.html'
 webbrowser.open(str(cluster_plot_path), new=2)  # 'new=2' opens in a new tab or window
 
+
 # Save df with all data
 save_dataframe(df, exp_folder_path)
+
 
 # Save paramteres
 params = {

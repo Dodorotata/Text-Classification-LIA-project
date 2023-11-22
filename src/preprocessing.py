@@ -4,7 +4,7 @@ from pandas import DataFrame
 from typing import List
 from transformers import AutoTokenizer
 
-from tools.text.filtering import remove_urls
+from filtering import remove_urls
 
 
 def read_raw_data_to_df(file_name: str) -> DataFrame:
